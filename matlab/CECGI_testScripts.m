@@ -99,7 +99,7 @@ for srcModel = 1:numel(sourceModelPaths)
 						case 'greensite'% Run Isotropy method
 
 						case 'spline'	% Run Spline-inverse
-							vec_lambda = 10.^linspace(-6,-3,1000);
+							vec_lambda = 10.^linspace(-6,3,1000);
 							evalc('[EGM_sol] = splineInverse(A, ECG, eye(M), vec_lambda, false);');
 
 						case 'messnarz'	% run messnarz (if valid assumption)
