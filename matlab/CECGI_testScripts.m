@@ -16,10 +16,12 @@ run('~/links/activationTimes/addpaths_activationTimes.m');
 						'~/Desktop/PacingDataset/EndEpiTMPout/'};
 
 	% inverse methods to run
-	inverseMethod = {'tikh0','tikh1','tikh2','spline','messnarz'};%,'TSVD','greensite','TV'};
+	inverseMethod = {'tikh0','tikh1','tikh2','spline'};%,'messnarz','TSVD','greensite','TV'};
 
 %% for all the sourceModels
 for srcModel = 1:numel(sourceModelPaths)
+	
+	fprintf('Running Source model: %s\n',sourceModelPaths{srcModel});
 	
 	% load files
 	files = dir([sourceModelPaths{srcModel}, 'TestData/']);
@@ -43,7 +45,7 @@ for srcModel = 1:numel(sourceModelPaths)
 			
 			% compute geometry regularization matrices
 				% compute adjacency matrix
-				pathLength = 3;
+				pathLength = 2;
 				[AdjMtrx] = computeAdjacencyMatrix(heart, pathLength);
 
 				% compute gradient estimator
@@ -64,70 +66,74 @@ for srcModel = 1:numel(sourceModelPaths)
 		
 		if strfind(files(fi).name,'BSP')
 			
+		fprintf('Running Example %s\n', files(fi).name);
+			
 			% load file
 			load([sourceModelPaths{srcModel}, 'TestData/', files(fi).name]);
 			ECG = BSP.potvals;
 			
 			for invM = 1:numel(inverseMethod)
 				
-				% skip messnarz if the source model is not based on TMPs
-				if (srcModel ~= 3)&&(invM == 5)
-					invM = 6;
-				end
-				%% select method
-				switch inverseMethod{invM}
-
-					case 'tikh0'	% Run Tikhonov 0th order
-						vec_lambda = 10.^linspace(-8,-3,1000);
-						[EGM_sol] = tikhonov_jcf(A, eye(M), eye(N), ECG, vec_lambda, false);
-
-					case 'tikh1'	% Run Tikhonov 1st order
-						vec_lambda = 10.^linspace(-6,-3,1000);
-						[EGM_sol] = tikhonov_jcf(A, Rd, eye(N), ECG, vec_lambda, false);
-
-					case 'tikh2'	% Run Tikhonov 2nd order
-						vec_lambda = 10.^linspace(-6,-3,1000);
-						[EGM_sol] = tikhonov_jcf(A, Lapl, eye(N), ECG, vec_lambda, false);
-
-					case 'TSVD'		% Run TSVD
-
-					case 'greensite'% Run Isotropy method
-
-					case 'spline'	% Run Spline-inverse
-						vec_lambda = 10.^linspace(-6,-3,1000);
-						[EGM_sol] = splineInverse(A, ECG, Rd, vec_lambda, false);
-						
-					case 'messnarz'	% run messnarz (if valid assumption)
-						vec_lambda = 10.^linspace(-6,-3,50);
-						[EGM_sol] = inverse_messnarz_ADMM(ECG, A, eye(M), vec_lambda, [-85 30], {10, 1e-3, 1e-3});
-						
-					case 'TV'		% run Total variation
-						
-
-				end % switch
-
-				%% run activation times and  detect PVC location
-				if srcModel == 3
-					[acttimes] = activationTimes_wrapper( -EGM_sol,D,[] );
-				else
-					[acttimes] = activationTimes_wrapper( EGM_sol,D,[] );
-				end
-					[~,ix] = min(acttimes);
-					pacLoc = heart.node(:,ix);
-					
-
-				%% save results
-					% potentials
-					saveName = [sourceModelPaths{srcModel}, 'solutions/', inverseMethod{invM}, '/CEIPVC2017_1_',parsedName{end}(1:end-4),'_POT_jcollfont',inverseMethod{invM},'_.mat' ];
-					save(saveName, 'EGM_sol');
+				fprintf('Inverse method: %s\n',inverseMethod{invM});
 				
-					% activation times
-					saveName = [sourceModelPaths{srcModel}, 'solutions/', inverseMethod{invM}, '/CEIPVC2017_1_',parsedName{end}(1:end-4),'_AT_jcollfont',inverseMethod{invM},'_.mat' ];
-					save(saveName, 'acttimes');
+				% skip messnarz if the source model is not based on TMPs
+				if ( (srcModel ~= 3)&&(invM ~= 5) ) || (srcModel == 3)
 					
-					% PVC localization
-					saveName = [sourceModelPaths{srcModel}, 'solutions/', inverseMethod{invM}, '/CEIPVC2017_1_',parsedName{end}(1:end-4),'_LOC_jcollfont',inverseMethod{invM},'_.mat' ];
-					save(saveName, 'pacLoc');
+					%% select method
+					switch inverseMethod{invM}
+
+						case 'tikh0'	% Run Tikhonov 0th order
+							vec_lambda = 10.^linspace(-8,-3,1000);
+							[EGM_sol] = tikhonov_jcf(A, eye(M), eye(N), ECG, vec_lambda, false);
+
+						case 'tikh1'	% Run Tikhonov 1st order
+							vec_lambda = 10.^linspace(-6,3,1000);
+							[EGM_sol] = tikhonov_jcf(A, Rd, eye(N), ECG, vec_lambda, false);
+
+						case 'tikh2'	% Run Tikhonov 2nd order
+							vec_lambda = 10.^linspace(-6,3,1000);
+							[EGM_sol] = tikhonov_jcf(A, Lapl, eye(N), ECG, vec_lambda, false);
+
+						case 'TSVD'		% Run TSVD
+
+						case 'greensite'% Run Isotropy method
+
+						case 'spline'	% Run Spline-inverse
+							vec_lambda = 10.^linspace(-6,-3,1000);
+							evalc('[EGM_sol] = splineInverse(A, ECG, eye(M), vec_lambda, false);');
+
+						case 'messnarz'	% run messnarz (if valid assumption)
+							vec_lambda = 10.^linspace(-6,-3,10);
+							[EGM_sol] = inverse_messnarz_ADMM(ECG, A, eye(M), vec_lambda, [-85 30], [10, 1e-5, 1e-5]);
+
+						case 'TV'		% run Total variation
+
+					end % switch
+
+					%% run activation times and  detect PVC location
+					if srcModel == 3
+						[acttimes] = activationTimes_wrapper( -EGM_sol,D,[] );
+					else
+						[acttimes] = activationTimes_wrapper( EGM_sol,D,[] );
+					end
+						[~,ix] = min(acttimes);
+						pacLoc = heart.node(:,ix);
+
+
+					%% save results
+						% potentials
+						saveName = [sourceModelPaths{srcModel}, 'solutions/', inverseMethod{invM}, '/CEIPVC2017_1_',parsedName{end}(1:end-4),'_POT_jcollfont',inverseMethod{invM},'_.mat' ];
+						save(saveName, 'EGM_sol');
+
+						% activation times
+						saveName = [sourceModelPaths{srcModel}, 'solutions/', inverseMethod{invM}, '/CEIPVC2017_1_',parsedName{end}(1:end-4),'_AT_jcollfont',inverseMethod{invM},'_.mat' ];
+						save(saveName, 'acttimes');
+
+						% PVC localization
+						saveName = [sourceModelPaths{srcModel}, 'solutions/', inverseMethod{invM}, '/CEIPVC2017_1_',parsedName{end}(1:end-4),'_LOC_jcollfont',inverseMethod{invM},'_.mat' ];
+						save(saveName, 'pacLoc');
+						
+				end
 				
 			end % inverse methods
 		end % if 

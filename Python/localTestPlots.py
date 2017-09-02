@@ -91,9 +91,9 @@ for srcScores in allScores:
     plt.subplot(221)
     plt.plot(t, vecScoresMSE[axisIx], 'k.', axisIx+1, np.average(vecScoresMSE[axisIx]),'ro')
     plt.title('MSE of potentials')
-    plt.axis([ 0.5,  3.5, 0, 5])
+    plt.axis([ 0.5,  3.5, 0, 10])
     plt.xticks([1,2,3],sourceModels)
-    plt.yticks(range(0,10,2))
+    plt.yticks(range(0,12,2))
 #    plt.xlabel('Source Models')
     plt.ylabel('MSE')
     

@@ -141,20 +141,23 @@ def computePOT(truthMatrix, testMatrix):
     
     
     ## MEAN SQUARED ERROR
-    sumError=0
-    for t in range(T):
-        truthVec=(truthMatrix[:,t])
-        testVec=(testMatrix[:,t])   
-        Error_t = math.pow(np.linalg.norm(truthVec-testVec),2)
-        magtruthVect = math.pow(np.linalg.norm(truthVec),2)
-        sumError= sumError + Error_t/magtruthVect
-        #print('Individual vectors:')
-        #print(truthVec)
-        #print(testVec)
-        #print(Error_t)
-        #print(np.array(truthVec-testVec))
+#    sumError=0
+#    for t in range(T):
+#        truthVec=(truthMatrix[:,t])
+#        testVec=(testMatrix[:,t])   
+#        Error_t = math.pow(np.linalg.norm(truthMatrix-testMatrix),'fro')
+#        magtruthVect = math.pow(np.linalg.norm(truthMatrix),'fro')
+#        sumError= sumError + Error_t/magtruthVect
+#        #print('Individual vectors:')
+#        #print(truthVec)
+#        #print(testVec)
+#        #print(Error_t)
+#        #print(np.array(truthVec-testVec))
+    Error_t = np.linalg.norm(truthMatrix-testMatrix,'fro')
+    magtruthVect = np.linalg.norm(truthMatrix,'fro')
+    RMSEr= Error_t/magtruthVect
         
-    RMSEr=sumError/T
+#    RMSEr=sumError/T
     #print('Average relative error is:')
     #print(RMSEr)
     
